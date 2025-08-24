@@ -549,4 +549,3 @@ public:
 		data[position] = value;
 	}
 };
-

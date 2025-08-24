@@ -1,22 +1,24 @@
 #pragma once
 #include <iostream>
 
+// vazno: tail = (tail + 1) % size; head = (head + 1) % size;
+
 // red
 template <class T>
 class Queue
 {
 public:
-	virtual T GetHead() { return; };
+	virtual T GetHead() = 0;
 	virtual void Enqueue(T object) { return; };
-	virtual void Dequeue() { return; };
-	virtual void IsEmpty() { return true; };
+	virtual T Dequeue() = 0;
+	virtual bool IsEmpty() { return true; };
 	virtual int NumberOfElements() { return 0; };
 };
 
 template <class T>
 class QueueArray : public Queue<T>
 {
-protected:
+public:
 	T* arr;
 	int size;
 	int head;
@@ -36,7 +38,7 @@ public:
 	
 	T GetHead() {
 		if (numberOfElements == 0)
-			return;
+			return T(-1);
 
 		return arr[head];
 	}
@@ -44,19 +46,22 @@ public:
 		if (numberOfElements == size)
 			return;
 
-		if (++tail == size)
+		tail++;
+
+		if (tail == size)
 			tail = 0; //ako je tail preso granice reda, vraca se na pocetak
 
+		if (numberOfElements == 0) {
+			head = 0;
+			tail = 0;
+		}
+
 		arr[tail] = object;
-
-		if (numberOfElements == 0)
-			head = tail;
-
 		numberOfElements++;
 	}
 	T Dequeue() {
 		if (numberOfElements == 0)
-			return;
+			return (T)0;
 
 		T result = arr[head];
 
@@ -72,6 +77,7 @@ public:
 	}
 
 };
+// ------------
 
 // dupli red
 template <class T>
@@ -88,64 +94,61 @@ public:
 	virtual int NumberOfElements() { return 0; };
 };
 
-//template <class T>
-//class DequeArray : public QueueArray<T>, public Deque<T>
-//{
-//public:
-//	DequeArray(int size) : QueueArray<T>(size) {};
-//
-//	//head
-//	T GetHead() {
-//		if (numberOfElements == 0)
-//			return;
-//
-//		return arr[head];
-//	}
-//
-//	void EnqueueHead(T object) {
-//		if (numberOfElements == size)
-//			return;
-//		if (numberOfElements == 0)
-//			head = tail = 0;
-//		if (head == 0)     //prvo proveri da li je head == 0, ako jeste prebacimo head na kraj 
-//			head = size - 1;
-//		else if (head != 0) //head nije bio nula, samo ga smanjimo za jedno mesto
-//			head--;
-//
-//		arr[head] = object;
-//		numberOfElements++;
-//	};
-//
-//	T DequeueHead() {
-//		return Dequeue();
-//	};
-//
-//	//tail
-//	T GetTail() {
-//		if (numberOfElements == 0)
-//			return;
-//
-//		return arr[tail];
-//	}
-//
-//	void EnqueueTail(T object) {
-//		Enqueue(object);
-//	}
-//
-//	T DequeueTail() {
-//		if (numberOfElements == 0)
-//			return;
-//
-//		if (tail == 0)
-//			tail = size - 1;
-//		else
-//			tail--;
-//
-//		numberOfElements--;
-//
-//		return arr[tail];
-//	}
-//};
+template <class T>
+class DequeArray : public QueueArray<T>, public Deque<T>
+{
+public:
+	DequeArray(int size) : QueueArray<T>(size) {};
+
+	//head
+	T GetHead() {
+		if (this->numberOfElements == 0)
+			return;
+
+		return this->arr[this->head];
+	}
+	void EnqueueHead(T object) {
+		if (this->numberOfElements == this->size)
+			return;
+		if (this->numberOfElements == 0)
+			this->head = this->tail = 0;
+		if (this->head == 0)     //prvo proveri da li je head == 0, ako jeste prebacimo head na kraj 
+			this->head = this->size - 1;
+		else if (this->head != 0) //head nije bio nula, samo ga smanjimo za jedno mesto
+			this->head--;
+
+		this->arr[this->head] = object;
+		this->numberOfElements++;
+	};
+	T DequeueHead() {
+		return this->Dequeue();
+	};
+
+	//tail
+	T GetTail() {
+		if (this->numberOfElements == 0)
+			return;
+
+		return this->arr[this->tail];
+	}
+	void EnqueueTail(T object) {
+		Enqueue(object);
+	}
+	T DequeueTail() {
+		if (this->numberOfElements == 0)
+			return;
+
+		if (this->tail == 0)
+			this->tail = this->size - 1;
+		else
+			this->tail--;
+
+		this->numberOfElements--;
+
+		return this->arr[this->tail];
+	}
+};
+// ------------
 
 // zadaci sa ispita
 class PriorityQueueNode
@@ -225,3 +228,77 @@ public:
 		return ret;
 	}
 };
+
+// zadatak sa funkcijama FirstStep, SecondStep, AddRequest
+class RequestNode {
+public:
+	int id;
+	bool isProcessed = false;
+
+	RequestNode() { id = 0; isProcessed = false; };
+};
+class DequeArrayForRequest
+{
+public:
+	RequestNode	*arr;
+	int size;
+	int h;
+	int t;
+	int p;
+	int numberOfElements;
+
+	DequeArrayForRequest(int size) {
+		this->size = size;
+		this->numberOfElements = 0;
+		h = t = p = -1;
+		this->arr = new RequestNode[size];
+	}
+	void AddRequest(int idReq) { // odnosno enqueue tail
+		if (numberOfElements == size)
+			return;
+
+		t++;
+
+		if (numberOfElements == 0) {
+			h = 0;
+			t = 0;
+			p = 0;
+		}
+
+		if (t == size) // tail je preso granice pa se vraca na pocetak
+			t = 0;
+
+		arr[t].id = idReq;
+		arr[t].isProcessed = false;
+		numberOfElements++;
+	}
+	void FirstStep() {
+		// izvrsi se ako element vec nije prosao firstStep
+		if (p == t) {
+			p++;
+			return;
+		}
+		arr[p].isProcessed = true;
+		p++;
+
+		if (p == size)
+			p = 0;
+	}
+	void SecondStep() {
+		if (h == t)
+			return;
+
+		if (arr[h].isProcessed) {
+			h++;
+
+			if (h == size)
+				h = 0;
+
+			numberOfElements--;
+
+			if (numberOfElements == 0)
+				h = t = p = -1;
+		}
+	}
+};
+

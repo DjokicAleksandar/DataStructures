@@ -287,6 +287,8 @@ public:
 		// svi operandi su jednocifreni i da nema razmaka
 		// npr: **45-934 = 216
 
-
+		// isto kao postfix
 	}
+
+
 };

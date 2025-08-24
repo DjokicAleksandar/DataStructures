@@ -364,12 +364,14 @@ public:
 
 			return 1 + max(Height(p->left), Height(p->right));
 	}
+
 	int NodeCount(BNode<T>* p) {
 		if (p == nullptr)
 			return 0;
 
 		return 1 + NodeCount(p->left) + NodeCount(p->right);
 	}
+
 	int GetDepth(BNode<T>* p) {
 		// vrati na kojoj je dubini cvor p
 		return GetDepth2(root, p, 0);
@@ -383,6 +385,7 @@ public:
 
 		return max(GetDepth2(p->left, q, lvl + 1), GetDepth2(p->right, q, lvl + 1));
 	} 
+
 	BNode<T>* BiggestSumOfChildren() {
 		// vraca cvor ciji je zbir direktih potomaka najveci
 		BNode<T>* curr = root;
@@ -416,5 +419,43 @@ public:
 		}
 
 		return maxNode;
+	}
+
+	// Jun 2 2024.
+	BNode<T>* minEvenDiff() {
+		BNode<T>* result = nullptr;
+		int minDiff = 99999;
+		FindMinDiff(root, result, minDiff);
+		return result;
+	}
+	int SumEven(BNode<T>* node) {
+		if (node == nullptr)
+			return 0;
+
+		int sum = 0;
+		
+		if (node->key % 2 == 0)
+			sum += node->key;
+
+		sum += SumEven(node->left);
+		sum += SumEven(node->right);
+
+		return sum;
+	}
+	void FindMinDiff(BNode<T>* node, BNode<T>*& result, int& minDiff) {
+		if (node == nullptr)
+			return;
+
+		int leftSum = SumEven(node->left);
+		int rightSum = SumEven(node->right);
+		int diff = abs(leftSum - rightSum);
+
+		if (diff < minDiff) {
+			minDiff = diff;
+			result = node;
+		}
+
+		FindMinDiff(node->left, result, minDiff);
+		FindMinDiff(node->right, result, minDiff);
 	}
 };

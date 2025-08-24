@@ -59,6 +59,53 @@ public:
 		arr[i] = last;
 		return result;
 	};
+
+	void SwapNodes(int i, int j) {
+		std::swap(arr[i], arr[j]);
+	}
+	void BubbleUp(int i) {
+		while (i > 1) {
+			if (arr[i] > arr[i / 2]) {
+				arr[i] = arr[i / 2];
+				i /= 2;
+			}
+			else
+				break;
+		}
+	}
+	void BubbleDown(int i) {
+		while (2 * i < numberOfElements + 1) {
+			int child = 2 * i;
+			int smallest = i;
+
+			if (child < numberOfElements + 1 && arr[child] < arr[smallest])
+				smallest = child;
+
+			if (child + 1 < numberOfElements + 1 && arr[child + 1] < arr[smallest])
+				smallest = child + 1;
+
+			if (smallest != i) {
+				SwapNodes(i, smallest);
+				i = smallest;
+			}
+			else
+				break;
+
+		}
+	}
+	void Update(T oldValue, T newValue) {
+		int index;
+		
+		for (int i = 0; i < numberOfElements; i++)
+			if (arr[i] == T)
+				index = i;
+
+		if (oldValue < newValue)
+			BubbleDown(index);
+		else
+			BubbleUp(index);
+	}
+
 	void HeapSort(T* a, int n) {
 		Heap<T> heap(n + 1);
 

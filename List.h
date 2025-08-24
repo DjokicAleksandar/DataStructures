@@ -502,6 +502,49 @@ public:
 
 		return poly;
 	}
+
+	// Jun 2 2024.
+	void GroupSegments(int k) {
+		// u ostatku lancane liste nalazi sve segmente koji su identicni segmenut duzine k
+		// koji pocinje od head, i brise ih
+
+		Node<T>* ptr = head;
+		Node<T>* prev = nullptr;
+		int i = 1;
+
+		while (i < k) {
+			ptr = ptr->next;
+			i++;
+		}
+		// sad ptr ukazuje na poslednji iz segmenta k
+
+		ptr = ptr->next;
+		Node<T>* start = ptr;
+
+		while (ptr != nullptr) {
+			Node<T>* end = nullptr;
+			Node<T>* curr = head;
+			int counter = 0;
+
+			
+			if (ptr->info == head->info) {
+				while (ptr != nullptr && curr != nullptr && ptr->info == curr->info && counter < k) {
+					counter++;
+					end = ptr;
+					ptr = ptr->next;
+					curr = curr->next;
+				}
+
+
+				if (counter == k) {
+					start->next = end->next;
+				}
+			}
+
+			start = ptr;
+			ptr = ptr->next;
+		}
+	}
 };
 
 class PlayerAsNode
