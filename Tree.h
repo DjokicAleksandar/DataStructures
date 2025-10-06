@@ -94,6 +94,7 @@ public:
 
 		numberOfElements++;
 	};
+
 	bool IsInTree(T el) { return Search(el) != nullptr; };
 	BNode<T>* Search(T el) { return Search(root, el); };
 	BNode<T>* Search(BNode<T>* p, T el) {
@@ -457,5 +458,262 @@ public:
 
 		FindMinDiff(node->left, result, minDiff);
 		FindMinDiff(node->right, result, minDiff);
+	}
+
+	void DeleteByCopying2(T el) {
+		BNode<T>* curr = root;
+		BNode<T>* parent = nullptr;
+		BNode<T>* node = nullptr;
+
+		while (curr != nullptr && !curr->IsEqual(el)) {
+			parent = curr;
+
+			if (curr->IsLessThan(el))
+				curr = curr->right;
+			else
+				curr = curr->left;
+		}
+
+		// curr ce biti trazeni element
+		node = curr;
+
+		if (curr != nullptr && curr->IsEqual(el)) {
+
+			if (node->left == nullptr) // nema levog potomka
+				node = node->right;
+			else if (curr->right == nullptr) // nema desnog potomka
+				node = node->left;
+			else { // ima oba potomka, treba naci krajnji desni cvor u levom podstablu
+				BNode<T>* tmp = node->left;
+				BNode<T>* tmpPrevious = node;
+
+				while (tmp->right != nullptr) {
+					tmpPrevious = tmp;
+					tmp = tmp->right;
+				}
+
+				node->SetKey(tmp->GetKey());
+
+				// posto moze da se desi da ne postoji desni potomak u celom levom podstablu
+				// mora se proveriti i to
+				if (tmpPrevious == node)
+					tmpPrevious->left = tmp->left;
+				else
+					tmpPrevious->right = tmp->left; // situacija u 99% slucajeva
+
+				delete tmp;
+				numberOfElements--;
+
+				return;
+			}
+
+			if (curr == root)
+				root = node;
+			else if (parent->left == curr) // curr drzi element koji treba da se brise, a node njegovog potomka levog ili desnog (za 1. i 2. slucaj)
+				parent->left = node;
+			else
+				parent->right = node;
+
+			delete curr;
+			numberOfElements--;
+		}
+	}
+
+	// rekurzivne funkcije 
+
+	BNode<T>* FindMaximal() {
+		//Napisati metodu Node* findMaximal()  clanicu klase neuredjenog
+		//binarnog stabla koja odredjuje  cvor stabla za koji vazi da je razlika zbira
+		//vrednosti njegovog levog podstabla i zbira vrednosti njegovog desnog
+		//podstabla maksimalna.Pri implementaciji je dozvoljeno koristiti pomocne
+		//funkcije, ali ne dodatne atribute u cvoru grafa, niti dodatne pomocne
+		//strukture podataka(npr.niz, lista, ...).Voditi racuna o efikasnosti resenja.
+
+		int max;
+		return FindMaximal2(root, &max);
+	}
+	BNode<T>* FindMaximal2(BNode<T>* p, int* max) {
+		if (p == nullptr)
+			return nullptr;
+
+		if (p->left == nullptr && p->right == nullptr) {
+			*max = 0;
+			return p;
+		}
+
+	}
+
+	// Jun 2025
+	int DeleteSingleLeafParents(BNode<T>* root) {
+		// brise cvorove koji imaju samo jednog direktnog potomka koji je list i vraca ukupan broj 
+		// tako obrisanih cvorova
+
+		// posto se brise cvor koji ima samo jednog potomka koji je list, treba samo uvezati pretka tog cvora sa listom
+		if (root == nullptr)
+			return 0;
+
+		int res = 0;
+
+		DeleteSingleLeafParents(root->left);
+		DeleteSingleLeafParents(root->right);
+
+		// proveri da pstoji samo jedan left ili right
+		if ((root->left == nullptr && root->right != nullptr && IsLeaf(root->right)) 
+			|| (root->left != nullptr && root->right == nullptr && IsLeaf(root->left))) 
+		{
+			BNode<T>* child = root->left != nullptr ? root->left : root->right;
+
+			delete root;
+			root = child;
+
+			return res + 1;
+		}
+
+		return res;
+	}
+	bool IsLeaf(BNode<T>* node) {
+		if (node->left == nullptr && node->right == nullptr)
+			return true;
+
+		return false;
+	}
+
+	// Jun 2 2022.
+	int BrojCvorova(int keyMin, int valueMin) {
+		Node<T>* first = root;
+
+		return BrojCvorova(keyMin, valueMin, false, first);
+	}
+	int BrojCvorova(int keyMin, int valueMin, bool isValid, Node<T>* root) {
+		if (root == nullptr)
+			return 0;
+
+		if (isValid && root->info > keyMin) { // ako je vec nekom predaku true, onda ne mora proveravati ovom
+			return 1 + BrojCvorova(keyMin, valueMin, true, root->left) + BrojCvorova(keyMin, valueMin, true, root->right);
+		}
+
+		// preci mu nemaju cvor veci od valueMin, da li on ima
+		if (root->info > valueMin) 
+			return BrojCvorova(keyMin, valueMin, true, root->left) + BrojCvorova(keyMin, valueMin, true, root->right);
+		else
+			return BrojCvorova(keyMin, valueMin, false, root->left) + BrojCvorova(keyMin, valueMin, false, root->right);
+	}
+
+	// Jun 2 2023.
+	int CountSmaller(int d) {
+		// broji koliko ima cvorova u stablu n koji u svojim podstablima imaju bar jedan cvor np tako da vazi n-d<np<n
+
+		BNode<T>* ptr = root;
+		return CountSmaller(d, ptr);
+	}
+	int CountSmaller(int d, BNode<T>* ptr) {
+		if (ptr == nullptr)
+			return 0;
+
+		bool found = HasValidNode(ptr->left, ptr->key, d) || HasValidNode(ptr->right, ptr->key, d);
+
+		int res = found ? 1 : 0;
+
+		res += CountSmaller(d, ptr->left);
+		res += CountSmaller(d, ptr->right);
+
+		return res;
+	}
+	bool HasValidNode(BNode<T>* node, int parentValue, int d) {
+		if (node == nullptr)
+			return false;
+
+		if (node->key > parentValue - d && node->key < parentValue)
+			return true;
+
+		return HasValidNode(node->left, parentValue, d) || HasValidNode(node->right, parentValue, d);
+	}
+
+	// Januar 2024.
+	int CountCloseParents(BNode<T>* node, int n) {
+		if (node == nullptr)
+			return 0;
+
+		// znam
+	}
+
+	// Jun 2024.
+	void DeleteLeaves() {
+		BNode<T>* ptr = root;
+		DeleteLeaves(ptr);
+	}
+	void DeleteLeaves(BNode<T>* ptr) {
+		if (ptr == nullptr)
+			return;
+
+		DeleteLeaves(ptr->left);
+		DeleteLeaves(ptr->right);
+
+		if (ptr->left == nullptr && ptr->right == nullptr) {
+			ptr = nullptr;
+			delete ptr;
+		}
+	}
+
+	int MaxLevel() {
+		int level = 0;
+		int* niz = new int[numberOfElements];
+		BNode<T>* ptr = root;
+
+		for (int i = 0; i < numberOfElements; i++)
+			niz[i] = 0;
+
+		MaxLevel(ptr, level, niz);
+
+		int max = 0, curr = 0, maxLevel = 0;
+		for (int i = 0; i < numberOfElements; i++) {
+			curr = niz[i];
+
+			if (curr > max) {
+				max = curr;
+				maxLevel = i;
+			}
+		}
+
+		return maxLevel;
+	}
+	void MaxLevel(BNode<T>* ptr, int level, int* niz) {
+		if (ptr == nullptr)
+			return;
+
+		if (niz[level] == 0)
+			niz[level] = 1;
+		else
+			niz[level]++;
+
+		MaxLevel(ptr->left, level + 1, niz);
+		MaxLevel(ptr->right, level + 1, niz);
+	}
+
+	// Oktobar 2, 2022.
+	BNode<T>* FindSibling(BNode<T>* p) {
+		// vraca pokazivac na jedan, bilo koji, cvor koji je u istom nivou sa cvorom p
+		// treba obici stablo samo jedanput
+		int currentLevel = 0;
+		int targetLevel = -1;
+
+		if (p == nullptr)
+			return nullptr;
+
+		BNode<T>* node = root;
+
+		return BNode<T>* FindSibling(p, node, currentLevel, targetLevel);
+	}
+	BNode<T>* FindSibling(BNode<T>* p, BNode<T>* node, int currentLevel, int targetLevel) {
+		if (p == nullptr || node == nullptr)
+			return nullptr;
+
+		if (p == node)
+			targetLevel = currentLevel;
+
+		if (currentLevel == targetLevel && node != p)
+			return node;
+
+		return FindSibling(p, node->left, currentLevel + 1, targetLevel) || FindSibling(p, node->right, currentLevel + 1, targetLevel);
 	}
 };

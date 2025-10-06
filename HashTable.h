@@ -223,7 +223,7 @@ public:
 	}
 	~ChainedScatterTable() { delete[] arr; };
 
-	// umetanje u tablicu sa ulancavanjem sinonima
+	// umetanje u tablicu sa unu. ulancavanjem sinonima
 	void Insert(ChainedScatterObject<T, R> obj) {
 		if (this->count == this->GetLength())
 			return;
@@ -246,6 +246,35 @@ public:
 
 		arr[probe] = obj;
 		arr[probe].status = 2; // zauzet
+		arr[probe].next = -1;
+		this->count++;
+	}
+	void Insert2(ChainedScatterObject<T, R> obj) {
+		if (this->count == this->GetLength())
+			return;
+
+		int probe = this->h(obj);
+
+		if (arr[probe].status == 2) { // mesto je zauzeto
+			while (arr[probe].next != -1)
+				probe = arr[probe].next;
+
+			int tail = probe;
+
+			probe = this->g(probe);
+
+			while (arr[probe].status == 2 && probe != tail) {
+				probe = this->g(probe);
+			}
+
+			if (probe == tail)
+				return; // neuspela tranformacija
+
+			arr[tail].next = probe;
+		}
+
+		arr[probe] = obj;
+		arr[probe].status = 2;
 		arr[probe].next = -1;
 		this->count++;
 	}
@@ -325,7 +354,8 @@ public:
 		unsigned int hash = h(obj);
 		unsigned int probe = hash;
 
-		if (arr[probe].status < 2) return probe; // ako je slobodan ili obrisan
+		if (arr[probe].status < 2) 
+			return probe; // ako je slobodan ili obrisan
 
 		int i = 0;
 		while (i < this->length) {
@@ -349,6 +379,28 @@ public:
 		}
 
 		return -1;
+	}
+
+	bool Signup(T key, R* record) {
+		int hash = hash(T);
+		int probe = hash;
+		int i = 1;
+
+		ScatterObject<T, R> obj(key, record);
+
+		while (arr[probe].status == 2 && i < this->length) {
+			probe = (probe + 1) % this->length;
+			i++;
+		}
+
+		if (arr[probe] == obj)
+			return false;
+		else {
+			arr[probe] = obj;
+			arr[probe].status = 2;
+			this->count++;
+			return true;
+		}
 	}
 };
 // -------------------------------------
@@ -653,60 +705,182 @@ public:
 	}
 };
 
-class StudentHashTableElement
+// jun 2 2022.
+
+class HashStudentElement 
 {
 public:
-	int id;
-	int indexNum; // key
-	char* name;
-	char* lastname;
-	bool free;
+	char* ime;
+	char* prezime;
+	double prosek;
+	int jmbg;
+	int status;
+	int next;
 
-	StudentHashTableElement() { name = nullptr; lastname = nullptr; free = true; };
-	StudentHashTableElement(int id, int indexNum) {
-		this->id = id;
-		this->indexNum = indexNum;
-		name = nullptr;
-		lastname = nullptr;
+	HashStudentElement() 
+		: ime(nullptr), prezime(nullptr), status(0), jmbg(0), prosek(0) {};
+	HashStudentElement(const char* ime, const char* prezime, double prosek, int jmbg)
+		: prosek(prosek), jmbg(jmbg) 
+	{
+		this->ime = new char[strlen(ime) + 1];
+		strcpy(this->ime, ime);
+
+		this->prezime = new char[strlen(prezime) + 1];
+		strcpy(this->prezime, prezime);
 	}
 };
-class StudentHashTable 
+class StaticListForSynonyms
 {
 public:
 	int size;
-	int count; // broj elemenata
-	StudentHashTableElement* table;
+	int lrmp;
+	int head;
+	int* next;
+	HashStudentElement* info;
 
-	StudentHashTable() { table = nullptr; };
-	StudentHashTable(int size) {
-		this->size = size;
-		count = 0;
-		table = new StudentHashTableElement[size];
+	StaticListForSynonyms(int size) : size(size), lrmp(0), head(0) {
+		next = new int[size];
+		info = new HashStudentElement[size];
+
+		lrmp = head = 0;
+
+		for (int i = 0; i < size - 1; i++)
+			next[i] = i + 1;
+
+		next[size - 1] = -1; // pokazuje nazad na lrmp
 	}
 
-	int hash(int key) {
-		return key % size;
-	}
+	void AddToLrmp(HashStudentElement obj) {
+		int pom = lrmp;
+		info[pom] = obj;
+		lrmp = next[pom];
 
-	int g(int i) {
-		return (i + 1) % size;
-	}
-
-	int Odredi(int index) { // koliko je kolizija bilo pre nego sto je on ubacen
-		int hashValue = hash(index);
-		int i = hashValue;
-		int count = 0;
-
-		while (!table[i].free) {
-			if (table[i].indexNum == index)
-				break;
-
-			if (hash(table[i].indexNum) == hashValue)
-				count++;
-
-			i = g(i);
+		// postavlja prethodni element na pom
+		for (int i = 0; i < size - 1; i++) {
+			if (next[i] == -1)
+				next[i] = pom;
 		}
 
-		return count;
+		info[pom].status = 2; // zauzet
+		next[pom] = -1;
+	}
+
+	void Delete(int jmbg) {
+		for (int i = 0; i < size - 1; i++) {
+			if (info[i].jmbg == jmbg) {
+				next[i] == -1;
+				info[i].status = 1;
+			}
+		}
+	}
+
+	void print() {
+		int p = head;
+		while (p != -1) {
+			std::cout << info[p].jmbg << " ";
+			p = next[p];
+		}
+		std::cout << "\n";
+	}
+
+};
+class HashStudent
+{
+public:
+	int length;
+	int count;
+	HashStudentElement* arr;
+	StaticListForSynonyms* sinonimi;
+
+	HashStudent(int length) { 
+		this->count = 0; 
+		this->length = length;  
+		arr = new HashStudentElement[length];
+		sinonimi = new StaticListForSynonyms(length);
+	};
+
+	int h(HashStudentElement obj) {
+		double A = (sqrt(5) - 1) / 2;
+		double frac = fmod(obj.jmbg * A, 1.0);
+		return (int)(length * frac);
+	}
+	void Insert(HashStudentElement obj) {
+		int probe = h(obj);
+
+		if (arr[probe].status == 2) {
+			// proveri da li postoji isti
+			for (int i = 0; i < sinonimi->size; i++) {
+				if (sinonimi->info[i].jmbg == obj.jmbg) {
+					return;
+				}
+			}
+
+			sinonimi->AddToLrmp(obj);
+		}
+		else {
+			arr[probe] = obj;
+			arr[probe].status = 2;
+		}
+	}
+	bool Exsists(int jmbg) {
+
+	}
+};
+
+// jun 2 2023.
+
+class HashOpenAdrStudentEl
+{
+public:
+	int indeks;
+	long jmbg;
+	char* ime;
+	char* prezime;
+	int upis;
+	float prosek;
+	int status;
+
+	HashOpenAdrStudentEl()
+		: indeks(0), jmbg(0), ime(0), prezime(0), upis(0), prosek(0), status(0) {};
+
+	HashOpenAdrStudentEl(int indeks, long jmbg, const char* ime, const char* prezime, int upis, float prosek)
+		: indeks(indeks), jmbg(jmbg), upis(upis), prosek(prosek), status(0)
+	{
+		this->ime = new char[strlen(ime) + 1];
+		strcpy(this->ime, ime);
+
+		this->prezime = new char[strlen(prezime) + 1];
+		strcpy(this->prezime, prezime);
+	}
+};
+class HashOpenAdrStudent
+{
+public:
+	int size = 12503;
+	int count;
+	HashOpenAdrStudentEl* arr;
+
+	int h(HashOpenAdrStudentEl obj) {
+		return obj.jmbg % size;
+	}
+
+	int secH(int i) {
+		return 3 * i * i;
+	}
+
+	void Insert(HashOpenAdrStudentEl obj) {
+		int hash = h(obj);
+
+		if (arr[hash].status != 2) {
+			arr[hash] = obj;
+			arr[hash].status = 2;
+			return;
+		}
+
+		int probe = hash;
+
+		for (int i = 0; i < size; i++) {
+
+		}
 	}
 };

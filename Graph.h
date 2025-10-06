@@ -458,7 +458,7 @@ public:
 		// isto kao po sirini samo koristi stack
 	};
 
-	int DepthTravRecursive(T a) {
+	int DepthTravRecursive(T a)	 {
 		LinkedNode<T, W>* pFirst = nullptr;
 		LinkedNode<T, W>* ptr = start;
 
@@ -546,6 +546,7 @@ public:
 
 		return returnValue;
 	};
+
 	void Print() {
 		LinkedNode<T, W>* ptr = start;
 		
@@ -781,8 +782,193 @@ public:
 
 		return result;
 	}
+	bool EdgeExists(LinkedNode<T, W>* first, LinkedNode<T, W>* second) {
+		Edge<T, W>* edge = first->adj;
 
+		while (edge != nullptr) {
+			if (edge->dest->key == second->key)
+				return true;
 
+			edge = edge->link;
+		}
+
+		return false;
+	}
+
+	// Jun 2025.
+	int CountEdgesSmallestSubgraph() {
+		int returnValue = 0;
+		int minReturnValue = 0;
+
+		LinkedNode<T, W>* ptr = start;
+		StackArray<LinkedNode<T, W>*> stack(this->numberOfNodes);
+
+		while (ptr != nullptr) {
+			ptr->status = 1;
+			ptr = ptr->next;
+		}
+
+		ptr = start;
+
+		while (ptr != nullptr) {
+			if (ptr->status == 3) {
+				ptr = ptr->next;
+				continue;
+			}
+
+			stack.Push(ptr);
+			ptr->status = 2;
+
+			while (!stack.IsEmpty()) {
+				ptr = stack.Pop();
+				ptr->status = 3;
+
+				Edge<T, W>* poteg = ptr->adj;
+
+				while (poteg != nullptr) {
+					returnValue += 1;
+
+					if (poteg->dest->status == 1) {
+						stack.Push(poteg->dest);
+						poteg->dest->status = 2;
+					}
+
+					poteg = poteg->link;
+				}
+			}
+
+			if (returnValue < minReturnValue) {
+				minReturnValue = returnValue;
+			}
+
+			minReturnValue /= 2; // jer je neusmeren graf pa je svaka grana prebrojana 2 puta
+
+			returnValue = 0;
+			ptr = ptr->next;
+		}
+
+		return minReturnValue;
+	}
+
+	// Jun 2 2022.
+	int BridgeCount(T a, T b) {
+		// minimalni broj mostova koje treba preci da bi se doslo od a do b
+		LinkedNode<T, W>* ptr = start;
+		LinkedNode<T, W>* a = nullptr;
+		LinkedNode<T, W>* b = nullptr;
+
+		while (ptr != nullptr) {
+			if (ptr->key == a)
+				a = ptr;
+			
+			if (ptr->key == b)
+				b = ptr;
+
+			ptr->status = 1;
+			ptr->prev = nullptr;
+			ptr->distance = 9999;	
+		}
+
+		a->distance = 0;
+
+		if (a == nullptr || b == nullptr)
+			return 0;
+
+		MinHeapForGraph<T, W>* minHeap = new MinHeapForGraph<T, W>* (numberOfNodes);
+		minHeap->Insert(a);
+		a->status = 2; // smesten na heap
+
+		while (!minHeap->IsEmpty()) {
+			Node<T, W>* minNode = minHeap->DeleteRoot();
+			minNode->status = 3; // obradjen
+
+			if (minNode == b)
+				break;
+
+			Edge<T, W>* poteg = minNode->adj;
+
+			while (poteg != nullptr) {
+				if (poteg->dest->status == 1) { // ako nije ni u heapu
+					poteg->dest->distance = minNode->distance + poteg->weight;
+					poteg->dest->status = 2;
+					poteg->dest->prev = minNode;
+					minHeap->Insert(poteg->dest);
+				}
+				else if (poteg->dest->status == 2) { // ako je vec na minHeap
+					if (minNode->distance + poteg->weight < poteg->dest->distance) {
+						int newDistance = minNode->distance + poteg->weight;
+						poteg->dest->prev = minNode;
+						poteg->dest->distance = newDistance;
+					}
+				}
+
+				poteg = poteg->link;
+			}
+		}
+
+		int result = 0;
+
+		while (b != nullptr) {
+			result++;
+			b = b->prev;
+		}
+
+		return result;
+	}
+
+	// Oktobar 2, 2022.
+	bool PathExists(LinkedNode<T, W>* a, LinkedNode<T, W>* b, LinkedNode<T, W>* c, LinkedNode<T, W>* d) {
+		if (!a || !b || !c || !d)
+			return false;
+
+		LinkedNode<T, W>* ptr = start;
+
+		while (ptr != nullptr) {
+			ptr->status = 1;
+			
+			ptr = ptr->next;
+		}
+
+		StackArray<LinkedNode<T, W>> stack(numberOfNodes);
+
+		stack.Push(a);
+		a->status = 2;
+
+		bool path = false;
+
+		while (!stack.IsEmpty()) {
+			ptr = stack.Pop();
+
+			ptr->status = 3;
+
+			if (ptr == b) {
+				LinkedNode<T, W>* temp = b;
+
+				while (temp->prev != nullptr) {
+					if (temp == d && temp->prev == c)
+						return true;
+
+					temp = temp->prev;
+				}
+			}
+
+			Edge<T, W>* poteg = ptr->adj;
+
+			while (poteg != nullptr) {
+				LinkedNode<T, W>* el = poteg->dest;
+
+				if (el->status == 1) {
+					stack.Push(el);
+					el->prev = ptr;
+					el->status = 2;
+				}
+
+				poteg = poteg->link;
+			}
+		}
+
+		return false;
+	}
 
 protected:
 	void DeleteEdgeToNode(LinkedNode<T, W>* ptr) {};

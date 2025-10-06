@@ -288,7 +288,62 @@ public:
 		// npr: **45-934 = 216
 
 		// isto kao postfix
+	}	
+};
+
+// jun 2025.
+double CalculateJun(const char* izraz) {
+	StackArray<int> stack(20);
+
+	char* element = new char(3);
+	int i = 0;
+	double result = 0;
+
+	while (izraz[i] != '\0') {
+
+		if (izraz[i] == ' ') {
+			i++;
+			continue;
+		}
+
+		if (izraz[i] == '+' || izraz[i] == '*' || izraz[i] == '-' || izraz[i] == '/') {
+			if (stack.IsEmpty())
+				return 0;
+
+			if (stack.NumberOfElements() < 2)
+				return 0;
+
+			double b = stack.Pop();
+			double a = stack.Pop();
+			double rez = 0;
+
+			switch (izraz[i])
+			{
+				case '+': rez = a + b; break;
+				case '-': rez = a - b; break;
+				case '*': rez = a * b; break;
+				case '/': rez = a / b; break;
+			}
+
+			stack.Push(rez);
+
+			i++;
+		}
+		else if (izraz[i] >= '0' && izraz[i] <= '9') {
+			double value = 0;
+
+			while (izraz[i] != '\0' && izraz[i] >= '0' && izraz[i] <= '9') {
+				value = value * 10 + (izraz[i] - '0');
+				i++;
+			}
+
+			stack.Push(value);
+		}
+		else
+			i++;
+
 	}
 
-
-};
+	result = stack.Pop();
+	return result;
+}

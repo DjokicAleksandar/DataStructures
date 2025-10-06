@@ -2,6 +2,9 @@
 #include <iostream>
 #include "Heap.h"
 
+// cesto se koriste dummy cvorovi (koji stoje pre head elementa) da bi se izbegli specificni slucajevi
+// i onda funkcija vrati dummy.next, sto je pocetak liste
+
 using namespace std;
 
 template <class T>
@@ -17,7 +20,6 @@ public:
 	T Print() { return info; };
 	bool IsEqual(T el) { return el == info; };
 };
-
 
 template <class T>
 class List
@@ -488,7 +490,7 @@ public:
 					curr = prev->next;
 				}
 				else {
-					curr->coef *= curr->coef;
+					curr->coef *= curr->exp;
 					curr->exp -= 1;
 
 					prev = curr;
@@ -543,6 +545,302 @@ public:
 
 			start = ptr;
 			ptr = ptr->next;
+		}
+	}
+
+	// Januar 2025.
+	void SortWithPivot(int pivot) { 
+		// treba sve elemente manje od pivot pomeriti na pocetak liste a sve vece na kraj liste
+
+		Node<T>* curr = nullptr;
+		Node<T>* lessHead = nullptr;
+		Node<T>* lessTail = nullptr;
+		Node<T>* aboveHead = nullptr;
+		Node<T>* aboveTail = nullptr;
+
+		curr = head;
+
+		while (curr != nullptr) {
+			Node<T>* next = curr->next; // zapamti sledeci cvor
+			curr->next = nullptr;
+
+			if (curr->info < pivot) {
+				if (lessHead == nullptr) {
+					lessHead = curr;
+					lessTail = curr;
+				}
+				else {
+					lessTail->next = curr;
+					lessTail = curr;
+				}
+			} 
+			else {
+				if (aboveHead == nullptr) {
+					aboveHead = curr;
+					aboveTail = curr;
+				}
+				else {
+					aboveTail->next = curr;
+					aboveTail = curr;
+				}
+			}
+
+			curr = next;
+		}
+
+		if (lessHead == nullptr)
+			this->head = aboveHead;
+		else {
+			this->head = lessHead;
+			lessTail->next = aboveHead;
+		}
+	}
+
+	// Jun 2024. // uradi opet
+	void GroupElements() { 
+		// grupise sve elemente koji imaju istu vrednost
+
+		Node<T>* curr = head;
+
+		while (curr != nullptr) {
+			Node<T>* prev = curr;
+			Node<T>* runner = curr->next;
+
+			while (move != nullptr) {
+
+				if (runner->info == curr->info) {
+					prev->next = runner->next;
+
+					runner->next = curr->next;
+					curr->next = runner;
+
+					curr = runner;
+
+					runner = prev->next;
+				}
+				else {
+					prev = runner;
+					runner = runner->next;
+				}
+			}
+
+			curr = curr->next;
+		}
+	}
+
+	// Jun 2 2022.
+	List<T>* SplitOrMove() {
+		List<T>* newList = new List<T>();
+
+		Node<T>* ptr = head;
+		Node<T>* prev = nullptr;
+
+		while (ptr != nullptr) {
+			Node<T>* curr = ptr->next;
+			Node<T>* nextPtr = ptr->next;
+			Node<T>* nextPrevPtr = ptr;
+			
+			// da li ima duplikata? ako nema onda ce nextPtr postati nullptr
+			// ako ima, onda koristimo nextPtrPrev i nextPtr da prelancamo nextPtr u novu listu
+			while (nextPtr != nullptr) {
+				if (ptr->info == nextPtr->info) 
+					break;
+
+				nextPrevPtr = nextPtr;
+				nextPtr = nextPtr->next;
+			}
+
+			// granicni slucaj u oba slucajeva je ako prebacujemo element sa head pozicije
+
+			if (nextPtr == nullptr) { // znaci nema duplikata, treba da prevezemo ptr u novu listu na head
+				if (ptr == head) {
+					head = ptr->next;
+
+					ptr->next = newList.head;
+					newList.head = ptr;
+				}
+				else {
+					prev->next = ptr->next;
+
+					ptr->next = newList.head;
+					newList.head = ptr;
+				}
+			} 
+			else { // postoji duplikat, pa prelancavamo nextPtr u listu
+				nextPrevPtr->next = nextPtr->next;
+
+				nextPtr->next = newList.head;
+				newList.head = nextPtr;
+			}
+
+			prev = ptr;
+			ptr = curr;
+		}
+
+		return &newList;
+	}
+
+	// Jun 2 2023.
+	bool MoveSectionToHead(int start, int end) {
+		Node<int>* startNode = nullptr;
+		Node<int>* startPrev = nullptr;
+		Node<int>* endNode = nullptr;
+		Node<int>* curr = head;
+		Node<int>* prev = nullptr;
+
+		while (curr != nullptr) {
+			if (curr->info == start) {
+				startNode = curr;
+				startPrev = prev;
+			}
+
+			if (curr->info == end) {
+				endNode = curr;
+			}
+
+			prev = curr;
+			curr = curr->next;
+		}
+
+		if (startNode == nullptr || endNode == nullptr)
+			return false;
+
+		if (startPrev == nullptr) // vec je taj segment pocinjao od head
+			return true;
+
+		if (startNode == endNode) { // ako je samo jedan cvor u pitanju
+			startPrev->next = endNode->next;
+			startNode->next = head;
+			head = startNode;
+		}
+		else { // klasicna situacija
+			startPrev->next = endNode->next;
+			endNode->next = head;
+			head = startNode;
+		}
+
+		return true;
+	}
+
+	// Decembar 2023.
+	bool ReverseOrder(int first, int last) {
+		Node<int>* firstNode = nullptr;
+		Node<int>* lastNode = nullptr;
+
+		Node<int>* prev = nullptr;
+		Node<int>* prev2 = nullptr;
+		Node<int>* curr = head;
+		Node<int>* next = nullptr;
+
+		bool first = false;
+		bool last = false;
+
+		while (curr != nullptr) {
+			if (curr->info == first) {
+				firstNode = curr;
+				first = true;
+				prev2 = prev;
+			}
+
+			if (curr->info == last) {
+				lastNode = curr;
+				if (!first)
+					last = true;
+			}
+
+			prev = curr;
+			curr = curr->next;
+		}
+
+		if (firstNode == nullptr || lastNode == nullptr)
+			return false;
+
+		if (last) // znaci last je pre first
+			return false;
+
+		prev = prev2;
+		curr = firstNode;
+		next = curr->next;
+		// prev je element pre firstNode
+		// curr je firstNode
+		// next je sledeci posle firstNode
+
+		while (curr != lastNode) {
+			next = curr->next;
+			curr->next = prev;
+			prev = curr;
+			curr = next;
+		}
+	}
+};
+
+template <class T>
+class StaticNode
+{
+public:
+	T info;
+	int next;
+
+	StaticNode() { next = -1; };
+	StaticNode(T info, int next) { this->info = info; this->next = next; };
+	T Print() { return info; };
+	bool IsEqual(T el) { return this->info == el; };
+};
+
+template <class T>
+class StaticList
+{
+public:
+	StaticNode<T>* arr;
+	int size;
+	int currNumOfElements;
+	int head;
+	int lrmp;
+
+	// lrmp je lista raspolozivog mem. prostora. On pokazuje koji je sledeci element koji je slobodan
+	StaticList() { arr = nullptr; size = 0; currNumOfElements = 0; head = -1; lrmp = -1; };
+	StaticList(int size) { 
+		arr = new T[size]; 
+		this->size = size; 
+		currNumOfElements = 0;
+		head = -1; 
+		lrmp = 0;
+		
+		for (int i = 0; i < size; i++) {
+			arr[i].next = i + 1;
+		}
+
+		arr[size - 1].next = -1;
+	};
+
+	int GetFirstFreeNode() {
+		if (lrmp == -1)
+			return -1;
+
+		int p = lrmp;
+		lrmp = arr[p].next;
+
+		return p;
+	}
+
+	void Insert(T el) {
+		int p = GetFirstFreeNode();
+
+		if (p == -1)
+			return;
+
+		arr[p].info = el;
+		arr[p].next = -1;
+
+		if (head == -1)
+			head = p;
+		else { // uveze poslednji sa dodatim
+			int q = head;
+
+			while (arr[q].next != -1)
+				q = arr[q].next;
+
+			arr[q].next = p;
 		}
 	}
 };
@@ -611,5 +909,82 @@ public:
 			curr->next = p;
 		}
 
+	}
+};
+
+// Jun 2025
+class JunNode
+{
+public:
+	int indeks;
+	int bodovi;
+	JunNode* next;
+
+	JunNode() : next(nullptr) {};
+	JunNode(int bodovi) : next(nullptr), bodovi(bodovi) {};
+};
+class JunList
+{
+public:
+	JunNode* head;
+	JunNode* tail;
+
+	JunList() : head(nullptr), tail(nullptr) {};
+
+	void AddToHead(int bodovi) {
+		JunNode* cvor = new JunNode(bodovi);
+
+		if (head != nullptr)
+			cvor->next = head;
+		
+		head = cvor;
+	}
+	JunNode* RemoveFromHead() {
+		if (head == nullptr)
+			return nullptr;
+
+		JunNode* temp = head;
+		head = temp->next;
+		return temp;
+	}
+	void Calculate(JunList* lista) {
+		// lista this je uredjena, a lista lista nije
+		// treba da prebaci elemente iz lista u this tako da ona ostane uredjena po broju bodova
+
+		if (lista->head == nullptr)
+			return;
+
+		JunNode* probe = lista->RemoveFromHead();
+
+		while (probe != nullptr) {
+			JunNode* temp = probe->next;
+
+			JunNode* curr = head;
+			JunNode* prev = nullptr;
+
+			while (curr != nullptr && probe->bodovi >= curr->bodovi) {
+				prev = curr;
+				curr = prev->next;
+			}
+
+			if (prev == nullptr) { // treba da se ubaci ispred head
+				probe->next = head;
+				head = probe;
+			}
+			else {
+				prev->next = probe;
+				probe->next = curr;
+			}
+
+			probe = temp;
+		}
+	}
+	void Print() {
+		JunNode* curr = head;
+
+		while (curr != nullptr) {
+			std::cout << curr->bodovi << " -> ";
+			curr = curr->next;
+		}
 	}
 };

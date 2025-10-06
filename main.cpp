@@ -11,15 +11,25 @@ using namespace std;
 
 int main() 
 {
-    GraphAsList<int, int> graph;
+    List<int> lista;
+    lista.AddToHead(1);
+    lista.AddToTail(2);
+    lista.AddToTail(3);
+    lista.AddToTail(4);
+    lista.AddToTail(5);
+    lista.AddToTail(6);
+    lista.AddToTail(7);
+    lista.AddToTail(8);
+    lista.AddToTail(9);
+    lista.AddToTail(10);
 
-    int dep[] = { 1, 2, 1, 4 };
+    lista.Print();
 
-    int* res = graph.DefineOrder(dep, 4);
+    lista.MoveSectionToHead(4, 8);
 
-    for (int i = 0; i < 4; i++) {
-        cout << res[i];
-    }
+    lista.Print();
+
+    //cout << strlen("samokomplementirajuci") << " " << strlen("otorinolaringologija");
 
     return 0;
 }

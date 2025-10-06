@@ -46,7 +46,8 @@ public:
 		while (2 * i < numberOfElements + 1) {
 			int child = 2 * i; 
 			
-			if (child + 1 < numberOfElements + 1 && arr[child + 1] < arr[child])
+			if (child + 1 < numberOfElements + 1 && arr[child + 1] < arr[child]) 
+				// ispituje koji je od dva potomka manji, da bi njega prebacivao nagore
 				child += 1;
 
 			if (last < arr[child])
